@@ -2,11 +2,12 @@ package main
 
 import "fast-store/internals"
 
-func main(){
-	f:=internals.Wal{
-		FileName: "ops.wal",
+func main() {
+	db := internals.NewDatabase()
+
+	for i := 0; i < 5; i++ {
+		db.Set("name", "navneet")
+		db.Get("shukla")
 	}
 
-	f.WriteToFile("navneet")
-	f.ReadFromFile()
 }
