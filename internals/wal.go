@@ -1,6 +1,7 @@
 package internals
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 )
@@ -20,11 +21,24 @@ func WriteToFile(data string) error {
 	return nil
 }
 
+// read file line by line
 func ReadFromFile() error {
-	data, err := os.ReadFile("ops.wal")
+	file, err := os.Open("ops.wal")
 	if err != nil {
 		return err
 	}
-	fmt.Println(string(data))
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	for scanner.Scan() {
+		line := scanner.Text() // one line at a time
+		fmt.Println(line)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
 	return nil
 }
