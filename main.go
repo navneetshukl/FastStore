@@ -2,14 +2,15 @@ package main
 
 import (
 	"fast-store/internals"
+	"fast-store/server"
 	"fmt"
 )
 
 func main() {
 	db := internals.NewDatabase()
 
-	err:=db.BuildAtTimeOfStart()
-	fmt.Println("Err from read is ",err)
+	err := db.BuildAtTimeOfStart()
+	fmt.Println("Err from read is ", err)
 
 	// for i := 0; i < 5; i++ {
 	// 	db.Set(fmt.Sprintf("idx%d",i), fmt.Sprintf("%d",i))
@@ -18,9 +19,11 @@ func main() {
 
 	//  db.Delete("name")
 
-	val,_:=db.Get("idx1")
-	fmt.Println("Val is ",val)
+	val, _ := db.Get("idx1")
+	fmt.Println("Val is ", val)
 
 	//internals.ReadFromFile()
+
+	server.StartServer()
 
 }
