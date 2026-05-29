@@ -1,2 +1,4 @@
 *.wal
 *.txt
+logs
+*.DS_Store
