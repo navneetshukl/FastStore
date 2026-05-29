@@ -3,8 +3,6 @@ package main
 import (
 	"fast-store/internals"
 	"fmt"
-	"log"
-	"time"
 )
 
 func main() {
@@ -13,12 +11,12 @@ func main() {
 	err := db.BuildAtTimeOfStart()
 	fmt.Println("Err from read is ", err)
 
-	for i := 0; i < 100; i++ {
-		db.Set(fmt.Sprintf("idx%d", i), fmt.Sprintf("%d", i))
-		//db.Get("shukla")
-		log.Println("SET : ", i)
-		time.Sleep(1 * time.Second)
-	}
+	// for i := 0; i < 100; i++ {
+	// 	db.Set(fmt.Sprintf("idx%d", i), fmt.Sprintf("%d", i))
+	// 	//db.Get("shukla")
+	// 	log.Println("SET : ", i)
+	// 	time.Sleep(1 * time.Second)
+	// }
 
 	//  db.Delete("name")
 
@@ -28,5 +26,7 @@ func main() {
 	//internals.ReadFromFile()
 
 	// server.StartServer()
+
+	internals.LogCompaction()
 
 }
