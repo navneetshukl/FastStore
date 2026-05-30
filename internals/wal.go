@@ -13,25 +13,28 @@ import (
 
 //. TODO. : Refactor this file and break it in functions
 
-// log will be stored like ops|key|value (eg -> SET|name|navneet)
-// create a new log file every minute and store the log in this file.
-func WriteToFile(data string) error {
-
+// CreateFolderIfNotExist create folder if it not exists
+func CreateFolderIfNotExist(folderName string) error {
 	err := os.MkdirAll("logs", 0755)
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	now := time.Now()
-	dateInt, err := strconv.Atoi(now.Format("20060102"))
+// OpenFile create file if it does not exist
+func OpenFile(fileName string) (*os.File, error) {
+	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	currentTime := fmt.Sprintf("%d-%02d-%02d", dateInt, now.Hour(), now.Minute())
+	return file, nil
+}
 
-	// every minute new log file is created with format date|hour|minute
-	logFileName := fmt.Sprintf("logs/%s-ops.wal", currentTime)
-	file, err := os.OpenFile(logFileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+// AppendLineToFile add single line to file
+func AppendLineToFile(fileName string, data string) error {
+
+	file, err := OpenFile(fileName)
 	if err != nil {
 		return err
 	}
@@ -42,7 +45,33 @@ func WriteToFile(data string) error {
 		return err
 	}
 	return nil
+
 }
+
+// AppendBulkData write bulk data to file
+func AppendBulkData(fileName string, bulkData string) error {
+	file, err := OpenFile(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+
+	_, err = writer.WriteString(bulkData)
+	if err != nil {
+		return err
+	}
+
+	err = writer.Flush()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// log will be stored like ops|key|value (eg -> SET|name|navneet)
 
 // read file line by line
 func ReadFromFile(fileName string) (*os.File, error) {
@@ -50,19 +79,6 @@ func ReadFromFile(fileName string) (*os.File, error) {
 	if err != nil {
 		return nil, err
 	}
-	//defer file.Close()
-
-	//scanner := bufio.NewScanner(file)
-
-	// for scanner.Scan() {
-	// 	line := scanner.Text() // one line at a time
-	// 	fmt.Println(line)
-	// }
-
-	// if err := scanner.Err(); err != nil {
-	// 	return err
-	// }
-
 	return file, nil
 }
 
@@ -139,36 +155,16 @@ func LogCompaction() {
 		fmt.Println("Error from read is ", v, " ", err)
 		if err == nil {
 			// write this map data to global.wal log file
-
+			var builder strings.Builder
 			for k, v := range logsData {
-				file, err := os.OpenFile("logs/global.wal", os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-				if err != nil {
-					fmt.Println("Error in opening the file ", err)
-					return
-				}
-				defer file.Close()
+				data := fmt.Sprintf("set|%s|%s\n", k, v)
+				builder.WriteString(data)
 
-				writer := bufio.NewWriter(file)
-
-				data := fmt.Sprintf("set|%s|%s", k, v)
-
-				_, err = writer.WriteString(data + "\n")
-				if err != nil {
-					fmt.Println("error in writer ", err)
-					return
-				}
-				err = writer.Flush()
-				if err != nil {
-					fmt.Println("Error in flush ", err)
-					return
-				}
-
-				err = file.Sync()
-				if err != nil {
-					fmt.Println("error in sync")
-					return
-				}
-				logsData = map[string]string{}
+			}
+			err = AppendBulkData("logs/global.wal", builder.String())
+			if err != nil {
+				log.Println("error in writing bulk to file")
+				return
 			}
 
 			// move this log file to processed log file

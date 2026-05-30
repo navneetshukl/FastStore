@@ -3,8 +3,10 @@ package internals
 import (
 	"bufio"
 	"fmt"
-	"os"
+	"log"
+	"strconv"
 	"strings"
+	"time"
 )
 
 type Database struct {
@@ -21,7 +23,16 @@ func NewDatabase() *Database {
 func (d *Database) Set(key, value string) error {
 	// add this to log file
 	data := fmt.Sprintf("%s|%s|%s", "set", key, value)
-	err := WriteToFile(data)
+
+	now := time.Now()
+	dateInt, err := strconv.Atoi(now.Format("20060102"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	currentTime := fmt.Sprintf("%d-%02d-%02d", dateInt, now.Hour(), now.Minute())
+	currentFileName := fmt.Sprintf("%s-ops.wal", currentTime)
+
+	err = AppendLineToFile(currentFileName, data)
 	if err != nil {
 		return err
 	}
@@ -32,7 +43,16 @@ func (d *Database) Set(key, value string) error {
 // Get retrieve value of particular key
 func (d *Database) Get(key string) (string, error) {
 	data := fmt.Sprintf("%s|%s", "get", key)
-	err := WriteToFile(data)
+
+	now := time.Now()
+	dateInt, err := strconv.Atoi(now.Format("20060102"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	currentTime := fmt.Sprintf("%d-%02d-%02d", dateInt, now.Hour(), now.Minute())
+	currentFileName := fmt.Sprintf("%s-ops.wal", currentTime)
+
+	err = AppendLineToFile(currentFileName, data)
 	if err != nil {
 		return "", err
 	}
@@ -45,7 +65,15 @@ func (d *Database) Get(key string) (string, error) {
 // Delete remove particular key
 func (d *Database) Delete(key string) error {
 	data := fmt.Sprintf("%s|%s", "del", key)
-	err := WriteToFile(data)
+	now := time.Now()
+	dateInt, err := strconv.Atoi(now.Format("20060102"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	currentTime := fmt.Sprintf("%d-%02d-%02d", dateInt, now.Hour(), now.Minute())
+	currentFileName := fmt.Sprintf("%s-ops.wal", currentTime)
+
+	err = AppendLineToFile(currentFileName, data)
 	if err != nil {
 		return err
 	}
@@ -54,8 +82,8 @@ func (d *Database) Delete(key string) error {
 }
 
 // BuildAtTimeOfStart function will build the db.This is basically for data persistence
-func (d *Database) BuildAtTimeOfStart()error {
-	file, err := os.Open("ops.wal")
+func (d *Database) BuildAtTimeOfStart() error {
+	file, err := OpenFile("logs/global.wal")
 	if err != nil {
 		return err
 	}
@@ -73,7 +101,7 @@ func (d *Database) BuildAtTimeOfStart()error {
 
 		case "del":
 			delete(d.store, cmds[1])
-			
+
 		}
 	}
 	if err := scanner.Err(); err != nil {
