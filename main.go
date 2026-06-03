@@ -2,6 +2,7 @@ package main
 
 import (
 	"fast-store/internals"
+	"fast-store/server"
 	"fmt"
 )
 
@@ -25,8 +26,8 @@ func main() {
 
 	//internals.ReadFromFile()
 
-	// server.StartServer()
+	server.StartServer()
 
-	internals.LogCompaction()
+	//internals.LogCompaction()
 
 }
