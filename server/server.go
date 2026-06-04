@@ -7,15 +7,16 @@ import (
 	"net"
 )
 
-func StartServer() {
-	listener, err := net.Listen("tcp", ":6969")
+func StartServer(port string) {
+	address:=fmt.Sprintf(":%s",port)
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		panic(err)
 	}
 
 	defer listener.Close()
 
-	log.Println("FastStore server is ready for accepting connection on port 6969")
+	log.Println("FastStore server is ready for accepting connection on port ",port)
 
 	for {
 		conn, err := listener.Accept()

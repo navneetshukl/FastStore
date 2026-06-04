@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"log"
 	"net"
@@ -13,8 +14,9 @@ var (
 	invalidCommand = "invalid command"
 )
 
-func ConnectToServer() {
-	conn, err := net.Dial("tcp", "localhost:6969")
+func ConnectToServer(port string) {
+	address:=fmt.Sprintf("localhost:%s",port)
+	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		panic(err)
 	}
@@ -50,7 +52,7 @@ func ConnectToServer() {
 	}
 }
 
-//processRequest read the user msg and convert to valid db command
+// processRequest read the user msg and convert to valid db command
 func processRequest(msg string) string {
 	splittedMsg := strings.Split(msg, " ")
 	var req []string
@@ -95,5 +97,11 @@ func processRequest(msg string) string {
 }
 
 func main() {
-	ConnectToServer()
+
+	port := flag.String("port", "6369", "FastStore server port")
+	flag.Parse()
+
+	fmt.Println("Port is ", *port)
+
+	ConnectToServer(*port)
 }

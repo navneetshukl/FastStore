@@ -3,10 +3,13 @@ package main
 import (
 	"fast-store/internals"
 	"fast-store/server"
+	"flag"
 	"fmt"
 )
 
 func main() {
+	port := flag.String("port", "6369", "FastStore server port")
+	flag.Parse()
 	db := internals.NewDatabase()
 
 	err := db.BuildAtTimeOfStart()
@@ -26,7 +29,7 @@ func main() {
 
 	//internals.ReadFromFile()
 
-	server.StartServer()
+	server.StartServer(*port)
 
 	//internals.LogCompaction()
 
