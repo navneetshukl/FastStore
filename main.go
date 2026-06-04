@@ -8,7 +8,10 @@ import (
 )
 
 func main() {
-	port := flag.String("port", "6369", "FastStore server port")
+	port := flag.String("port", "6369", "faststore server port")
+	userName := flag.String("username", "", "username for db server")
+	password := flag.String("password", "", "password for db server")
+
 	flag.Parse()
 	db := internals.NewDatabase()
 
@@ -29,7 +32,9 @@ func main() {
 
 	//internals.ReadFromFile()
 
-	server.StartServer(*port)
+	newDBServer := server.NewServer(*userName, *port, *password)
+
+	newDBServer.StartServer()
 
 	//internals.LogCompaction()
 
