@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -14,8 +15,22 @@ var (
 	invalidCommand = "invalid command"
 )
 
-func ConnectToServer(port string) {
-	address:=fmt.Sprintf("localhost:%s",port)
+type Client struct {
+	UserName string `json:"userName"`
+	Port     string `json:"port"`
+	Password string `json:"password"`
+}
+
+func NewClient(username, port, password string) *Client {
+	return &Client{
+		UserName: username,
+		Port:     port,
+		Password: password,
+	}
+}
+
+func (c *Client) ConnectToServer() {
+	address := fmt.Sprintf("localhost:%s", c.Port)
 	conn, err := net.Dial("tcp", address)
 	if err != nil {
 		panic(err)
@@ -23,7 +38,44 @@ func ConnectToServer(port string) {
 
 	defer conn.Close()
 
-	log.Println("Connected to FastStore server")
+	jsonReq, err := json.Marshal(c)
+	if err != nil {
+		log.Fatalf("error in marshalling %v\n", err)
+		return
+	}
+
+	fmt.Printf("Original Client request is %v\n", c)
+
+	fmt.Printf("Marshalled Client request is %s\n", string(jsonReq))
+
+	_, err = conn.Write(jsonReq)
+	if err != nil {
+		log.Fatalf("error in writing to server %v\n", err)
+		return
+
+	}
+
+	// serverResp := []byte{}
+	serverResp, err := bufio.NewReader(conn).ReadString('\n')
+	if err != nil {
+		log.Fatal(err)
+	}
+	if err != nil {
+		log.Fatalf("error in reading from server %v\n", err)
+		return
+	}
+	if string(serverResp) == "invalid username" {
+		log.Println("UserName is incorrect")
+		return
+
+	}
+
+	if string(serverResp) == "invalid password" {
+		log.Println("Password is incorrect")
+		return
+
+	}
+	log.Println("FastStore Server : ", string(serverResp))
 
 	inputReader := bufio.NewReader(os.Stdin)
 	for {
@@ -99,9 +151,13 @@ func processRequest(msg string) string {
 func main() {
 
 	port := flag.String("port", "6369", "FastStore server port")
+	userName := flag.String("username", "", "username for db server")
+	password := flag.String("password", "", "password for db server")
 	flag.Parse()
 
 	fmt.Println("Port is ", *port)
 
-	ConnectToServer(*port)
+	client := NewClient(*userName, *port, *password)
+
+	client.ConnectToServer()
 }
