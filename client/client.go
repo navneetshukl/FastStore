@@ -160,4 +160,5 @@ func main() {
 	client := NewClient(*userName, *port, *password)
 
 	client.ConnectToServer()
+	
 }
