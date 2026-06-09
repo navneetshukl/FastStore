@@ -6,16 +6,26 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 type Database struct {
 	store map[string]string
+	mutex *sync.RWMutex
 }
 
-func NewDatabase() *Database {
+type FastStoreCache interface {
+	Set(key, value string) error
+	Get(key string) (string, error)
+	Delete(key string) error
+	BuildAtTimeOfStart() error
+}
+
+func NewDatabase() FastStoreCache {
 	return &Database{
 		store: map[string]string{},
+		mutex: &sync.RWMutex{},
 	}
 }
 
@@ -36,7 +46,9 @@ func (d *Database) Set(key, value string) error {
 	if err != nil {
 		return err
 	}
+	d.mutex.Lock()
 	d.store[key] = value
+	d.mutex.Unlock()
 	return nil
 }
 
@@ -56,10 +68,13 @@ func (d *Database) Get(key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if _, ok := d.store[key]; !ok {
+	d.mutex.Lock()
+	val, ok := d.store[key]
+	d.mutex.Unlock()
+	if !ok {
 		return "", nil
 	}
-	return d.store[key], nil
+	return val, nil
 }
 
 // Delete remove particular key
@@ -77,7 +92,9 @@ func (d *Database) Delete(key string) error {
 	if err != nil {
 		return err
 	}
+	d.mutex.Lock()
 	delete(d.store, key)
+	d.mutex.Unlock()
 	return nil
 }
 

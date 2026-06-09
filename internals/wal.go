@@ -85,6 +85,8 @@ func ReadFromFile(fileName string) (*os.File, error) {
 // LogCompaction function will compact the log file
 func LogCompaction() {
 
+	log.Println("Starting Log Compaction")
+
 	// read all the file present in logs aprt from global.wal
 	files, err := os.ReadDir("logs")
 	if err != nil {
@@ -149,7 +151,7 @@ func LogCompaction() {
 			}
 		}
 
-		log.Println("logs Data is ", logsData)
+		//log.Println("logs Data is ", logsData)
 
 		err = scanner.Err()
 		fmt.Println("Error from read is ", v, " ", err)

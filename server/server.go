@@ -3,22 +3,26 @@ package server
 import (
 	"bufio"
 	"encoding/json"
+	"fast-store/internals"
 	"fmt"
 	"log"
 	"net"
+	"strings"
 )
 
 type Server struct {
-	UserName string `json:"userName"`
-	Port     string `json:"port"`
-	Password string `json:"password"`
+	UserName     string `json:"userName"`
+	Port         string `json:"port"`
+	Password     string `json:"password"`
+	CacheService internals.FastStoreCache
 }
 
-func NewServer(username, port, password string) *Server {
+func NewServer(username, port, password string, cacheService internals.FastStoreCache) *Server {
 	return &Server{
-		UserName: username,
-		Port:     port,
-		Password: password,
+		UserName:     username,
+		Port:         port,
+		Password:     password,
+		CacheService: cacheService,
 	}
 }
 
@@ -88,8 +92,57 @@ func (s *Server) handleConnection(conn net.Conn) {
 			return
 		}
 
-		fmt.Println("msg received is ", msg)
+		serverResp, err := s.storeData(msg)
+		if err != nil {
+			conn.Write([]byte("NOT_OK | " + err.Error()))
+			continue
+		}
 
-		conn.Write([]byte("Msg received is " + msg))
+		conn.Write([]byte("OK | " + serverResp))
+	}
+}
+
+func (s *Server) storeData(command string) (string, error) {
+	cmds := strings.Split(command, "|")
+	if len(cmds) < 2 || len(cmds) > 3 {
+		return "", invalid_command
+	}
+
+	switch strings.ToLower(cmds[0]) {
+	case "set":
+		if len(cmds) != 3 {
+			return "", invalid_command
+		}
+		err := s.CacheService.Set(cmds[1], cmds[2])
+		if err != nil {
+			log.Printf("error in set for %s is %v\n ", command, err)
+			return "", server_error
+		}
+		return "", nil
+
+	case "get":
+		if len(cmds) != 2 {
+			return "", invalid_command
+		}
+		val, err := s.CacheService.Get(cmds[1])
+		if err != nil {
+			log.Printf("error in set for %s is %v\n ", command, err)
+			return "", server_error
+		}
+		return val, nil
+
+	case "del":
+		if len(cmds) != 2 {
+			return "", invalid_command
+		}
+		err := s.CacheService.Delete(cmds[1])
+		if err != nil {
+			log.Printf("error in set for %s is %v\n ", command, err)
+			return "", server_error
+		}
+		return "", nil
+
+	default:
+		return "", invalid_command
 	}
 }

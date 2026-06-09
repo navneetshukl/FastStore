@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"fast-store/internals"
 	"fast-store/server"
 	"flag"
 	"fmt"
+	"time"
 )
 
 func main() {
@@ -13,29 +15,32 @@ func main() {
 	password := flag.String("password", "", "password for db server")
 
 	flag.Parse()
-	db := internals.NewDatabase()
+	cacheService := internals.NewDatabase()
 
-	err := db.BuildAtTimeOfStart()
+	err := cacheService.BuildAtTimeOfStart()
 	fmt.Println("Err from read is ", err)
 
-	// for i := 0; i < 100; i++ {
-	// 	db.Set(fmt.Sprintf("idx%d", i), fmt.Sprintf("%d", i))
-	// 	//db.Get("shukla")
-	// 	log.Println("SET : ", i)
-	// 	time.Sleep(1 * time.Second)
-	// }
+	newDBServer := server.NewServer(*userName, *port, *password, cacheService)
 
-	//  db.Delete("name")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
-	// val, _ := db.Get("idx1")
-	// fmt.Println("Val is ", val)
+	go func() {
+		ticker := time.NewTimer(70 * time.Second)
+		defer ticker.Stop()
 
-	//internals.ReadFromFile()
+		for {
+			select {
+			case <-ctx.Done():
+				fmt.Println("Server Closing")
+				return
 
-	newDBServer := server.NewServer(*userName, *port, *password)
+			case <-ticker.C:
+				internals.LogCompaction()
+			}
+		}
+	}()
 
 	newDBServer.StartServer()
-
-	//internals.LogCompaction()
 
 }
