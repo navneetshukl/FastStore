@@ -5,7 +5,11 @@ import (
 	"fast-store/internals"
 	"fast-store/server"
 	"flag"
-	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 	"time"
 )
 
@@ -18,29 +22,49 @@ func main() {
 	cacheService := internals.NewDatabase()
 
 	err := cacheService.BuildAtTimeOfStart()
-	fmt.Println("Err from read is ", err)
+	log.Println("Err from read is ", err)
 
 	newDBServer := server.NewServer(*userName, *port, *password, cacheService)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
+	var wg sync.WaitGroup
+
+	wg.Add(1)
 	go func() {
-		ticker := time.NewTimer(70 * time.Second)
+		defer wg.Done()
+
+		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
 
 		for {
 			select {
 			case <-ctx.Done():
-				fmt.Println("Server Closing")
+				log.Println("Compaction worker stopped")
 				return
 
 			case <-ticker.C:
+				log.Println("Starting log compaction")
 				internals.LogCompaction()
+				log.Println("Log compaction completed")
 			}
 		}
 	}()
 
-	newDBServer.StartServer()
+	go func() {
+		newDBServer.StartServer()
+	}()
 
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
+	sig := <-sigChan
+	log.Printf("Received signal: %v", sig)
+
+	cancel()
+
+	log.Println("Waiting for background jobs to finish...")
+	wg.Wait()
+
+	log.Println("Graceful shutdown completed")
 }

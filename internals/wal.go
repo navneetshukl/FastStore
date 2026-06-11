@@ -154,7 +154,6 @@ func LogCompaction() {
 		//log.Println("logs Data is ", logsData)
 
 		err = scanner.Err()
-		fmt.Println("Error from read is ", v, " ", err)
 		if err == nil {
 			// write this map data to global.wal log file
 			var builder strings.Builder
@@ -172,6 +171,11 @@ func LogCompaction() {
 			// move this log file to processed log file
 		}
 		file.Close()
-		//return
+
+		
 	}
+
+	time.Sleep(10*time.Second)
+
+	log.Println("Log compaction complete")
 }
