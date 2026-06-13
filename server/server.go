@@ -93,16 +93,23 @@ func (s *Server) handleConnection(conn net.Conn) {
 		}
 
 		serverResp, err := s.storeData(msg)
+		log.Println("Server response is ",serverResp)
 		if err != nil {
 			conn.Write([]byte("NOT_OK | " + err.Error()))
 			continue
 		}
 
-		conn.Write([]byte("OK | " + serverResp))
+		conn.Write([]byte("OK | " + serverResp +"\n"))
 	}
 }
 
 func (s *Server) storeData(command string) (string, error) {
+
+	log.Println("Command is ",command)
+
+	if strings.ToLower(command) == "ping" {
+		return "pong", nil
+	}
 	cmds := strings.Split(command, "|")
 	if len(cmds) < 2 || len(cmds) > 3 {
 		return "", invalid_command

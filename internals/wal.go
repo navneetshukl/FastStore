@@ -23,16 +23,21 @@ func CreateFolderIfNotExist(folderName string) error {
 }
 
 // OpenFile create file if it does not exist
+// func OpenFile(fileName string) (*os.File, error) {
+// 	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return file, nil
+// }
+
 func OpenFile(fileName string) (*os.File, error) {
-	file, err := os.OpenFile(fileName, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0644)
-	if err != nil {
-		return nil, err
-	}
-	return file, nil
+	return os.OpenFile(fileName,os.O_RDWR|os.O_APPEND|os.O_CREATE,0644)
 }
 
 // AppendLineToFile add single line to file
 func AppendLineToFile(fileName string, data string) error {
+	fileName=logsFolder+fileName
 
 	file, err := OpenFile(fileName)
 	if err != nil {
@@ -50,6 +55,8 @@ func AppendLineToFile(fileName string, data string) error {
 
 // AppendBulkData write bulk data to file
 func AppendBulkData(fileName string, bulkData string) error {
+		fileName=logsFolder+fileName
+
 	file, err := OpenFile(fileName)
 	if err != nil {
 		return err
@@ -75,6 +82,8 @@ func AppendBulkData(fileName string, bulkData string) error {
 
 // read file line by line
 func ReadFromFile(fileName string) (*os.File, error) {
+		fileName=logsFolder+fileName
+
 	file, err := os.Open(fileName)
 	if err != nil {
 		return nil, err
@@ -88,7 +97,7 @@ func LogCompaction() {
 	log.Println("Starting Log Compaction")
 
 	// read all the file present in logs aprt from global.wal
-	files, err := os.ReadDir("logs")
+	files, err := os.ReadDir(logsFolder)
 	if err != nil {
 		panic(err)
 	}
@@ -119,7 +128,7 @@ func LogCompaction() {
 	logsData := map[string]string{}
 
 	for _, v := range fileNames {
-		v = "logs/" + v
+		v = logsFolder + v
 		file, err := ReadFromFile(v)
 		if err != nil {
 			log.Printf("Error in reading file %s is %v \n", v, err)
@@ -174,8 +183,6 @@ func LogCompaction() {
 
 		
 	}
-
-	time.Sleep(10*time.Second)
 
 	log.Println("Log compaction complete")
 }

@@ -79,22 +79,36 @@ func (c *Client) ConnectToServer() {
 
 	inputReader := bufio.NewReader(os.Stdin)
 	for {
-		msg, _ := inputReader.ReadString('\n')
+		log.Println("Waiting for command")
+		msg, err := inputReader.ReadString('\n')
+		log.Println("Command received")
+		if err!=nil{
+			log.Println("Error in read is ",err)
+			return
+		}
 
 		validCommand := processRequest(msg)
 		if validCommand == invalidCommand {
-			log.Print("Server replied : ", "invalid command")
+			log.Println("Server replied invalid: ", "invalid command")
 			continue
 		}
 
-		_, err = conn.Write([]byte(validCommand))
+		log.Println("Client command is ",validCommand)
+
+		_, err = conn.Write([]byte(validCommand + "\n"))
 		if err != nil {
 			log.Println("Write error:", err)
 			return
 		}
 
+		log.Println("After written")
+
 		serverReader := bufio.NewReader(conn)
+
+		log.Println("Response is sis iss 1")
 		resp, err := serverReader.ReadString('\n')
+
+		log.Println("Response from server is ",resp)
 		if err != nil {
 			log.Println("Read error:", err)
 			return
@@ -106,6 +120,7 @@ func (c *Client) ConnectToServer() {
 
 // processRequest read the user msg and convert to valid db command
 func processRequest(msg string) string {
+	log.Println("Original message is ",msg)
 	splittedMsg := strings.Split(msg, " ")
 	var req []string
 	cmd := ""
@@ -116,6 +131,9 @@ func processRequest(msg string) string {
 			req = append(req, v)
 		}
 
+	}
+	if req[0] == "ping" {
+		cmd = "ping"
 	}
 	if len(req) > 3 || len(req) < 1 {
 		cmd = invalidCommand
@@ -145,6 +163,8 @@ func processRequest(msg string) string {
 
 	}
 
+	log.Println("Cmd after process is ",cmd)
+
 	return cmd
 }
 
@@ -160,5 +180,5 @@ func main() {
 	client := NewClient(*userName, *port, *password)
 
 	client.ConnectToServer()
-	
+
 }

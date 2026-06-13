@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+var logsFolder string = "logs/"
+
 type Database struct {
 	store map[string]string
 	mutex *sync.RWMutex
@@ -104,6 +106,7 @@ func (d *Database) BuildAtTimeOfStart() error {
 	if err != nil {
 		return err
 	}
+	log.Println("FileName is ", file.Name())
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
@@ -122,6 +125,7 @@ func (d *Database) BuildAtTimeOfStart() error {
 		}
 	}
 	if err := scanner.Err(); err != nil {
+		log.Println("Inside thisssssss ", err)
 		return err
 	}
 	return nil
